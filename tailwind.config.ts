@@ -57,6 +57,8 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "next-appointment": "hsl(var(--next-appointment))",
+        "past-appointment": "hsl(var(--past-appointment))",
       },
       borderRadius: {
         lg: "var(--radius)",
