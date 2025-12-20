@@ -21,7 +21,7 @@ export default function Auth() {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate('/');
+        navigate('/dashboard');
       }
     });
   }, [navigate]);
@@ -43,13 +43,13 @@ export default function Auth() {
           title: 'התחברת בהצלחה',
           description: 'ברוך הבא חזרה!',
         });
-        navigate('/');
+        navigate('/dashboard');
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${window.location.origin}/dashboard`,
             data: {
               display_name: displayName || email,
             },
@@ -70,7 +70,7 @@ export default function Auth() {
         });
         
         if (signInError) throw signInError;
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (error: any) {
       toast({
@@ -84,13 +84,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-50 to-medical-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
       <Card className="w-full max-w-md p-8 space-y-6">
         <div className="flex flex-col items-center space-y-2">
-          <div className="w-16 h-16 bg-medical-600 rounded-full flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+            <Calendar className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-center">ניהול תורים</h1>
+          <h1 className="text-3xl font-bold text-center text-foreground">ניהול תורים</h1>
           <p className="text-muted-foreground text-center">
             {isLogin ? 'התחברי למערכת' : 'הרשמי למערכת'}
           </p>
@@ -152,7 +152,7 @@ export default function Auth() {
           <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="text-medical-600 hover:text-medical-700 font-medium"
+            className="text-primary hover:text-primary/80 font-medium"
           >
             {isLogin ? 'עדיין לא נרשמת? הירשמי כאן' : 'כבר יש לך חשבון? התחברי'}
           </button>
