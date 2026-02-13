@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Appointment, SortMode } from '@/types/appointment';
+import { Appointment } from '@/types/appointment';
 import { supabaseAppointmentService } from '@/lib/supabaseAppointmentService';
 import { supabase } from '@/integrations/supabase/client';
 import { AppointmentCard } from '@/components/AppointmentCard';
 import { AppointmentForm } from '@/components/AppointmentForm';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Plus, ArrowUpDown, Shield, LogOut } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Plus, Shield, LogOut, CalendarClock, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [sortMode, setSortMode] = useState<SortMode>('upcoming');
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+  const [pastAppointments, setPastAppointments] = useState<Appointment[]>([]);
+  const [activeTab, setActiveTab] = useState('upcoming');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | undefined>();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -21,13 +23,12 @@ const Index = () => {
 
   const loadAppointments = async () => {
     try {
-      if (sortMode === 'upcoming') {
-        const data = await supabaseAppointmentService.getUpcoming();
-        setAppointments(data);
-      } else {
-        const data = await supabaseAppointmentService.getByRecent();
-        setAppointments(data);
-      }
+      const [upcoming, past] = await Promise.all([
+        supabaseAppointmentService.getUpcoming(),
+        supabaseAppointmentService.getPast(),
+      ]);
+      setUpcomingAppointments(upcoming);
+      setPastAppointments(past);
     } catch (error: any) {
       toast.error(error.message || 'שגיאה בטעינת תורים');
     }
@@ -35,7 +36,7 @@ const Index = () => {
 
   useEffect(() => {
     checkAuthAndLoadData();
-  }, [sortMode]);
+  }, []);
 
   const checkAuthAndLoadData = async () => {
     try {
@@ -46,7 +47,6 @@ const Index = () => {
         return;
       }
 
-      // Check if user is admin
       const { data: roles } = await supabase
         .from('user_roles')
         .select('role')
@@ -118,10 +118,6 @@ const Index = () => {
     setEditingAppointment(undefined);
   };
 
-  const toggleSortMode = () => {
-    setSortMode(prev => prev === 'upcoming' ? 'recent' : 'upcoming');
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
@@ -135,8 +131,8 @@ const Index = () => {
     );
   }
 
-  const nextAppointmentId = sortMode === 'upcoming' && appointments.length > 0 
-    ? appointments[0].id 
+  const nextAppointmentId = upcomingAppointments.length > 0 
+    ? upcomingAppointments[0].id 
     : null;
 
   return (
@@ -162,38 +158,59 @@ const Index = () => {
               </Button>
             </div>
           </div>
-          
-          {/* Sort Toggle */}
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={toggleSortMode}
-              className="gap-2"
-            >
-              <ArrowUpDown className="w-5 h-5" />
-              {sortMode === 'upcoming' ? 'הצג לפי תור אחרון שהוזן' : 'הצג לפי תור קרוב'}
-            </Button>
-          </div>
         </div>
 
-        {/* Appointments List */}
-        <div className="space-y-4 mb-20">
-          {appointments.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-xl text-muted-foreground">אין תורים עדיין</p>
-              <p className="text-muted-foreground mt-2">לחצי על הכפתור למטה כדי להוסיף תור</p>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
+          <TabsList className="w-full mb-6">
+            <TabsTrigger value="upcoming" className="flex-1 gap-2">
+              <CalendarClock className="w-4 h-4" />
+              תורים קרובים
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 gap-2">
+              <History className="w-4 h-4" />
+              היסטוריה
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upcoming">
+            <div className="space-y-4 mb-20">
+              {upcomingAppointments.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-xl text-muted-foreground">אין תורים קרובים</p>
+                  <p className="text-muted-foreground mt-2">לחצי על הכפתור למטה כדי להוסיף תור</p>
+                </div>
+              ) : (
+                upcomingAppointments.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    isNext={appointment.id === nextAppointmentId}
+                    onClick={() => handleEdit(appointment)}
+                  />
+                ))
+              )}
             </div>
-          ) : (
-            appointments.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                isNext={appointment.id === nextAppointmentId}
-                onClick={() => handleEdit(appointment)}
-              />
-            ))
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <div className="space-y-4 mb-20">
+              {pastAppointments.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-xl text-muted-foreground">אין היסטוריית תורים</p>
+                </div>
+              ) : (
+                pastAppointments.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    onClick={() => handleEdit(appointment)}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Add Button */}
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10">

@@ -41,6 +41,23 @@ export const supabaseAppointmentService = {
       });
   },
 
+  // Get past appointments sorted by date descending (most recent past first)
+  async getPast(): Promise<Appointment[]> {
+    const appointments = await this.getAll();
+    const now = new Date();
+    
+    return appointments
+      .filter(apt => {
+        const aptDateTime = new Date(`${apt.date}T${apt.time}`);
+        return aptDateTime <= now;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
+        return dateB.getTime() - dateA.getTime();
+      });
+  },
+
   // Get all appointments sorted by creation date (most recent first)
   async getByRecent(): Promise<Appointment[]> {
     const appointments = await this.getAll();
