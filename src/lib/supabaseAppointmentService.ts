@@ -24,7 +24,7 @@ export const supabaseAppointmentService = {
     }));
   },
 
-  // Get upcoming appointments sorted by date/time
+  // Get upcoming appointments sorted by date/time (closest first)
   async getUpcoming(): Promise<Appointment[]> {
     const appointments = await this.getAll();
     const now = new Date();
@@ -32,7 +32,7 @@ export const supabaseAppointmentService = {
     return appointments
       .filter(apt => {
         const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-        return aptDateTime >= now && apt.status === 'upcoming';
+        return aptDateTime > now;
       })
       .sort((a, b) => {
         const dateA = new Date(`${a.date}T${a.time}`);
