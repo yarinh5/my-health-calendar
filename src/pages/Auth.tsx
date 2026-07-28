@@ -8,8 +8,10 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from 'lucide-react';
 
+type Mode = 'login' | 'signup' | 'forgot';
+
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -17,12 +19,13 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const isLogin = mode === 'login';
+  const isSignup = mode === 'signup';
+  const isForgot = mode === 'forgot';
+
   useEffect(() => {
-    // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate('/dashboard');
-      }
+      if (session) navigate('/dashboard');
     });
   }, [navigate]);
 
@@ -31,18 +34,20 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+      if (isForgot) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
         });
-
         if (error) throw error;
-
         toast({
-          title: 'התחברת בהצלחה',
-          description: 'ברוך הבא חזרה!',
+          title: 'נשלח אימייל',
+          description: 'בדקי את תיבת הדואר שלך לקישור לאיפוס הסיסמה',
         });
+        setMode('login');
+      } else if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast({ title: 'התחברת בהצלחה', description: 'ברוך הבא חזרה!' });
         navigate('/dashboard');
       } else {
         const { error } = await supabase.auth.signUp({
@@ -50,25 +55,13 @@ export default function Auth() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: {
-              display_name: displayName || email,
-            },
+            data: { display_name: displayName || email },
           },
         });
-
         if (error) throw error;
+        toast({ title: 'נרשמת בהצלחה!', description: 'כעת תוכלי להתחבר' });
 
-        toast({
-          title: 'נרשמת בהצלחה!',
-          description: 'כעת תוכלי להתחבר',
-        });
-        
-        // Auto login after signup
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
         navigate('/dashboard');
       }
@@ -92,12 +85,12 @@ export default function Auth() {
           </div>
           <h1 className="text-3xl font-bold text-center text-foreground">ניהול תורים</h1>
           <p className="text-muted-foreground text-center">
-            {isLogin ? 'התחברי למערכת' : 'הרשמי למערכת'}
+            {isLogin ? 'התחברי למערכת' : isSignup ? 'הרשמי למערכת' : 'איפוס סיסמה'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
+          {isSignup && (
             <div className="space-y-2">
               <Label htmlFor="displayName">שם</Label>
               <Input
@@ -124,37 +117,47 @@ export default function Auth() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">סיסמה</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              className="text-lg"
-              minLength={6}
-            />
-          </div>
+          {!isForgot && (
+            <div className="space-y-2">
+              <Label htmlFor="password">סיסמה</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="text-lg"
+                minLength={6}
+              />
+            </div>
+          )}
 
-          <Button
-            type="submit"
-            className="w-full text-lg"
-            size="lg"
-            disabled={loading}
-          >
-            {loading ? 'רק רגע...' : isLogin ? 'התחברי' : 'הרשמי'}
+          <Button type="submit" className="w-full text-lg" size="lg" disabled={loading}>
+            {loading ? 'רק רגע...' : isLogin ? 'התחברי' : isSignup ? 'הרשמי' : 'שלחי קישור לאיפוס'}
           </Button>
         </form>
 
-        <div className="text-center">
+        <div className="text-center space-y-2">
+          {isLogin && (
+            <button
+              type="button"
+              onClick={() => setMode('forgot')}
+              className="block w-full text-primary hover:text-primary/80 font-medium"
+            >
+              שכחת סיסמה?
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-primary hover:text-primary/80 font-medium"
+            onClick={() => setMode(isLogin ? 'signup' : 'login')}
+            className="block w-full text-primary hover:text-primary/80 font-medium"
           >
-            {isLogin ? 'עדיין לא נרשמת? הירשמי כאן' : 'כבר יש לך חשבון? התחברי'}
+            {isLogin
+              ? 'עדיין לא נרשמת? הירשמי כאן'
+              : isSignup
+              ? 'כבר יש לך חשבון? התחברי'
+              : 'חזרה להתחברות'}
           </button>
         </div>
       </Card>
