@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppointmentCard } from '@/components/AppointmentCard';
 import { AppointmentForm } from '@/components/AppointmentForm';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Shield, LogOut, CalendarClock, History } from 'lucide-react';
 import { toast } from 'sonner';
@@ -140,7 +140,7 @@ const Index = () => {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
             <h1 className="text-3xl font-bold">התורים שלי</h1>
             <div className="flex gap-2">
               {isAdmin && (
@@ -213,10 +213,11 @@ const Index = () => {
         </Tabs>
 
         {/* Add Button */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10">
+        <div className="add-appointment-button fixed left-1/2 -translate-x-1/2 z-10">
           <Button
             onClick={handleAddNew}
             size="lg"
+            aria-label="תור חדש"
             className="rounded-full w-16 h-16 shadow-lg"
           >
             <Plus className="w-8 h-8" />
@@ -225,7 +226,9 @@ const Index = () => {
 
         {/* Form Dialog */}
         <Dialog open={isFormOpen} onOpenChange={(open) => !open && handleCancel()}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="appointment-dialog max-w-2xl p-0" aria-describedby="appointment-form-description">
+            <DialogTitle className="sr-only">{editingAppointment ? 'עריכת תור' : 'תור חדש'}</DialogTitle>
+            <DialogDescription id="appointment-form-description" className="sr-only">פרטי התור הרפואי</DialogDescription>
             <AppointmentForm
               appointment={editingAppointment}
               onSave={handleSave}

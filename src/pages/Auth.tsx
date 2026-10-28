@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { RECOVERY_URL, RECOVERY_ORIGIN } from '@/lib/recoveryLinks';
+import appIcon from '@/assets/appointments-icon.jpg';
 
 type Mode = 'login' | 'signup' | 'forgot';
 
@@ -36,7 +39,7 @@ export default function Auth() {
     try {
       if (isForgot) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: Capacitor.isNativePlatform() ? RECOVERY_URL : `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
         toast({
@@ -54,7 +57,7 @@ export default function Auth() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: Capacitor.isNativePlatform() ? RECOVERY_ORIGIN : window.location.origin,
             data: { display_name: displayName || email },
           },
         });
@@ -80,9 +83,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
       <Card className="w-full max-w-md p-8 space-y-6">
         <div className="flex flex-col items-center space-y-2">
-          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-primary-foreground" />
-          </div>
+          <img src={appIcon} width={64} height={64} alt="התורים שלי" className="rounded-xl" />
           <h1 className="text-3xl font-bold text-center text-foreground">ניהול תורים</h1>
           <p className="text-muted-foreground text-center">
             {isLogin ? 'התחברי למערכת' : isSignup ? 'הרשמי למערכת' : 'איפוס סיסמה'}

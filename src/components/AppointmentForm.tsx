@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { X, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AppointmentPhotoImport } from './AppointmentPhotoImport';
+import { type PhotoDraft } from '@/lib/appointmentPhoto';
 
 interface AppointmentFormProps {
   appointment?: Appointment;
@@ -26,9 +28,18 @@ export const AppointmentForm = ({ appointment, onSave, onDelete, onCancel }: App
   const [date, setDate] = useState(appointment?.date || '');
   const [time, setTime] = useState(appointment?.time || '');
   const [note, setNote] = useState(appointment?.note || '');
+  const [photoImported, setPhotoImported] = useState(false);
+  const [photoConfirmed, setPhotoConfirmed] = useState(false);
+  const applyPhoto = (draft: PhotoDraft) => {
+    setLocation(draft.location || ''); setExamType(draft.examType || '');
+    setDate(draft.date || ''); setTime(draft.time || '');
+    setPhotoImported(true); setPhotoConfirmed(false);
+    toast.success('הפרטים נקראו. בדקי ותקני אותם לפני השמירה.');
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (photoImported && !photoConfirmed) { toast.error('אשרי שבדקת את הפרטים מהצילום'); return; }
 
     // Validation
     if (!location.trim()) {
@@ -76,12 +87,14 @@ export const AppointmentForm = ({ appointment, onSave, onDelete, onCancel }: App
           variant="ghost"
           size="icon"
           onClick={onCancel}
-          className="h-10 w-10"
+          className="h-12 w-12"
+          aria-label="סגירת טופס תור"
         >
           <X className="h-6 w-6" />
         </Button>
       </div>
 
+      {!appointment && <AppointmentPhotoImport onDraft={applyPhoto} />}
       <div className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="location" className="text-lg font-semibold">
@@ -119,6 +132,7 @@ export const AppointmentForm = ({ appointment, onSave, onDelete, onCancel }: App
             <Input
               id="date"
               type="date"
+              dir="ltr"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="text-lg h-12"
@@ -133,6 +147,8 @@ export const AppointmentForm = ({ appointment, onSave, onDelete, onCancel }: App
             <Input
               id="time"
               type="time"
+              dir="ltr"
+              step="60"
               value={time}
               onChange={(e) => setTime(e.target.value)}
               className="text-lg h-12"
@@ -155,11 +171,13 @@ export const AppointmentForm = ({ appointment, onSave, onDelete, onCancel }: App
         </div>
       </div>
 
+      {photoImported && <label className="flex items-start gap-3 text-lg font-medium"><input type="checkbox" className="mt-1 h-6 w-6 shrink-0 accent-primary" checked={photoConfirmed} onChange={e => setPhotoConfirmed(e.target.checked)} />בדקתי את סוג הבדיקה, המיקום, התאריך והשעה והם נכונים</label>}
       <div className="flex gap-3 pt-4">
         <Button
           type="submit"
           className="flex-1 h-14 text-lg font-semibold"
           size="lg"
+          disabled={photoImported && !photoConfirmed}
         >
           <Save className="ml-2 h-5 w-5" />
           שמור תור
@@ -172,6 +190,7 @@ export const AppointmentForm = ({ appointment, onSave, onDelete, onCancel }: App
             onClick={onDelete}
             className="h-14 px-6"
             size="lg"
+            aria-label="מחיקת תור"
           >
             <Trash2 className="h-5 w-5" />
           </Button>

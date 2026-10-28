@@ -7,27 +7,43 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { KeyRound } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [linkError, setLinkError] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    const onRecovery = () => setReady(true);
+    window.addEventListener('native-password-recovery', onRecovery);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+      if (event === 'PASSWORD_RECOVERY') {
         setReady(true);
       }
     });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
-    });
-
-    return () => subscription.unsubscribe();
+    const prepare = async () => {
+      const query = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(window.location.hash.slice(1));
+      if (query.get('token_hash') && query.get('type') === 'recovery') {
+        const tokenHash = query.get('token_hash');
+        if (!tokenHash) return;
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+        if (error) setLinkError('קישור האיפוס פג תוקף או כבר נוצל. בקשי קישור חדש.');
+        else { setReady(true); window.history.replaceState({}, '', '/reset-password'); }
+      } else if (hash.get('type') === 'recovery') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) setReady(true);
+      } else if (!Capacitor.isNativePlatform()) {
+        setLinkError('פתחי את הקישור שקיבלת באימייל, או בקשי קישור איפוס חדש.');
+      }
+    };
+    void prepare();
+    return () => { subscription.unsubscribe(); window.removeEventListener('native-password-recovery', onRecovery); };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,9 +77,7 @@ export default function ResetPassword() {
         </div>
 
         {!ready ? (
-          <p className="text-center text-muted-foreground">
-            פותחת את הקישור לאיפוס... אם לא הגעת מקישור באימייל, חזרי לעמוד ההתחברות.
-          </p>
+          <div className="space-y-4 text-center"><p className="text-muted-foreground">{linkError || 'ממתינה לקישור איפוס מהאימייל...'}</p><Button variant="outline" className="w-full h-12" onClick={() => navigate('/auth')}>חזרה להתחברות</Button></div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">

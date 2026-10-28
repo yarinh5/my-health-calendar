@@ -109,3 +109,21 @@ All colors MUST be HSL.
     direction: rtl;
   }
 }
+
+html { min-height: 100%; }
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+input, textarea, select { font-size: max(16px, 1rem); scroll-margin-block: 5rem; }
+input[type="date"], input[type="time"] { min-width: 0; width: 100%; min-height: 48px; text-align: right; color-scheme: light; }
+.add-appointment-button { bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
+.appointment-dialog { width: calc(100% - 1rem); max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem); overflow-y: auto; overscroll-behavior: contain; }
+.appointment-dialog > button { display: none; }
+.keyboard-open .add-appointment-button { visibility: hidden; }
+@media (max-width: 640px) {
+  .appointment-dialog { top: calc(env(safe-area-inset-top, 0px) + 0.5rem); transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
