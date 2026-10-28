@@ -9,6 +9,8 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import { NativeBridge } from './components/NativeBridge';
+import { Capacitor } from '@capacitor/core';
 
 const queryClient = new QueryClient();
 
@@ -18,8 +20,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <NativeBridge />
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={Capacitor.isNativePlatform() ? <Index /> : <Landing />} />
           <Route path="/dashboard" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<Admin />} />
