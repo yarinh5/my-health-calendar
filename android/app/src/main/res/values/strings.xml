@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">imal-appointments</string>
+    <string name="title_activity_main">imal-appointments</string>
+    <string name="package_name">app.lovable.p090f7471a7704dd9ba555d211cbbe2ea</string>
+    <string name="custom_url_scheme">app.lovable.p090f7471a7704dd9ba555d211cbbe2ea</string>
+</resources>
