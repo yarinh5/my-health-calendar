@@ -1,0 +1,7 @@
+{
+  "applinks": {
+    "details": [
+      { "appIDs": ["TEAMID.app.lovable.p090f7471a7704dd9ba555d211cbbe2ea"], "components": [{ "/": "/reset-password*" }] }
+    ]
+  }
+}
